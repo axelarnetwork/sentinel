@@ -70,7 +70,7 @@ pub struct EventSubClientDriver {
 
 impl EventSubClientDriver {
     pub fn close(self) -> Result<(), EventSubError> {
-        self.close_tx.send(()).or(Err(Report::new(CloseFailed)))
+        self.close_tx.send(()).map_err(|_| Report::new(CloseFailed))
     }
 }
 
