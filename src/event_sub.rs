@@ -238,11 +238,11 @@ mod tests {
         mock_client.expect_close().once().returning(|| Ok(()));
 
         let (mut client, client_driver) = EventSubClient::new(mock_client, 10);
-        let mut st = client.sub();
+        let mut event_stream = client.sub();
         let handle = tokio::spawn(async move { client.run().await });
 
         assert!(client_driver.close().is_ok());
-        assert!(st.next().await.is_none());
+        assert!(event_stream.next().await.is_none());
         assert!(handle.await.is_ok());
     }
 
