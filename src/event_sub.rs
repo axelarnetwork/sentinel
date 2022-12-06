@@ -120,8 +120,12 @@ impl<T: TmClient + Sync> EventSubClient<T> {
 
                 loop {
                     select! {
-                        Some(res) = sub.next() => {
-                            let event = res.into_report().change_context(StreamFailed)?;
+                        res = sub.next() => {
+                            if res.is_none() {
+                                break;
+                            }
+
+                            let event = res.unwrap().into_report().change_context(StreamFailed)?;
                             if let EventData::NewBlock { block: Some(block), .. } = event.data {
                                 let height = block.header().height;
                                 self.process_block(tx, block)
@@ -129,8 +133,7 @@ impl<T: TmClient + Sync> EventSubClient<T> {
                                     .await?;
                             }
                         },
-                        Ok(()) = &mut self.close_rx => break,
-                        else => break,
+                        _ = &mut self.close_rx => break,
                     }
                 }
 
