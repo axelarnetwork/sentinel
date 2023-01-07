@@ -118,7 +118,7 @@ impl<T: TmClient + Sync> EventSubClient<T> {
                             let event = res.unwrap().into_report().change_context(StreamFailed)?;
                             if let EventData::NewBlock { block: Some(block), .. } = event.data {
                                 let height = block.header().height;
-                                self.process_blocks(tx, (latest_block_height.value()+1).try_into().unwrap(), height)
+                                self.process_blocks(tx, latest_block_height.increment(), height)
                                     .await?;
                                 latest_block_height = height;
                             }
@@ -150,10 +150,10 @@ impl<T: TmClient + Sync> EventSubClient<T> {
     }
 
     async fn process_block(&self, tx: &Sender<Event>, height: block::Height) -> Result<(), EventSubError> {
-        tx.send(height.into()).into_report().change_context(PublishFailed)?;
         for event in self.query_events(height).await? {
             tx.send(event.into()).into_report().change_context(PublishFailed)?;
         }
+        tx.send(height.into()).into_report().change_context(PublishFailed)?;
 
         Ok(())
     }
@@ -311,19 +311,17 @@ mod tests {
 
             loop {
                 if let Some(Ok(event)) = event_stream.next().await {
+                    count += 1;
+
                     match event {
                         Event::Block(_) => {
-                            assert!(count == 0)
+                            assert!(count == event_count);
+                            break;
                         }
                         Event::AbciEvent { .. } => {
-                            assert!(count > 0)
+                            assert!(count < event_count)
                         }
                     }
-                    count += 1;
-                }
-
-                if count == event_count {
-                    break;
                 }
             }
 
