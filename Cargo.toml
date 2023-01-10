@@ -12,7 +12,7 @@ config = "0.13.2"
 toml = "0.5.9"
 deref-derive = "0.1.0"
 clap = { version = "4.0.26", features = ["derive", "cargo"] }
-error-stack = "0.2.4"
+error-stack = { version = "0.2.4", features = ["eyre"] }
 serde_json = "1.0.89"
 tracing = { version = "0.1.37", features = ["valuable", "log"] }
 tracing-subscriber = { version = "0.3.16", features = ["json", "valuable"] }
@@ -26,3 +26,6 @@ tokio = "1.22.0"
 tokio-stream = { version = "0.1.11", features = ["sync"] }
 async-trait = "0.1.59"
 mockall = "0.11.3"
+cosmrs = "0.11.0"
+cosmos-sdk-proto = "0.16.0"
+

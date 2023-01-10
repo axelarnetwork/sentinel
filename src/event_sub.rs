@@ -163,6 +163,7 @@ mod tests {
     use mockall::mock;
     use mockall::predicate;
     use tendermint::block::Height;
+    use tendermint::Hash;
     use tokio::sync::oneshot;
     use tokio::test;
 
@@ -184,7 +185,7 @@ mod tests {
         let mut mock_client = MockWebsocketClient::new();
         mock_client
             .expect_subscribe()
-            .returning(|_| Err(Error::client_internal("internal failure".into())).into_report());
+            .returning(|_| Err(TmClientError::client_internal("internal failure".into())).into_report());
         let (mut client, _) = EventSubClient::new(mock_client, 10);
         let _ = client.sub();
         let res = client.run().await;
@@ -272,13 +273,13 @@ mod tests {
     }
 
     mock! {
-            Subscription{}
+        Subscription{}
 
-            impl Stream for Subscription {
-                type Item = core::result::Result<Event, Error>;
+        impl Stream for Subscription {
+            type Item = core::result::Result<Event, TmClientError>;
 
-                fn poll_next<'a>(self: Pin<&mut Self>, cx: &mut Context<'a>) -> Poll<Option<<Self as Stream>::Item>>;
-            }
+            fn poll_next<'a>(self: Pin<&mut Self>, cx: &mut Context<'a>) -> Poll<Option<<Self as Stream>::Item>>;
+        }
     }
 
     mock! {
@@ -287,12 +288,12 @@ mod tests {
         #[async_trait]
         impl TmClient for WebsocketClient{
             type Sub = MockSubscription;
-            type Tx = Vec<u8>;
 
-            async fn subscribe(&self, query: Query) -> Result<<Self as TmClient>::Sub, Error>;
-            async fn block_results(&self, block_height: Height) -> Result<BlockResponse, Error>;
-            async fn broadcast(&self, tx_raw: <Self as TmClient>::Tx) -> Result<TxResponse, Error>;
-            fn close(self) -> Result<(), Error>;
+            async fn subscribe(&self, query: Query) -> Result<<Self as TmClient>::Sub, TmClientError>;
+            async fn block_results(&self, block_height: Height) -> Result<BlockResponse, TmClientError>;
+            async fn broadcast(&self, tx_raw: Vec<u8>) -> Result<BroadcastResponse, TmClientError>;
+            async fn get_tx_height(&self, tx_hash: Hash, prove: bool) -> Result<Height,TmClientError>;
+            fn close(self) -> Result<(), TmClientError>;
         }
     }
 }
